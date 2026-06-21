@@ -1,6 +1,10 @@
 // ══════════════════════════════════════════
-// DATA STORE
+// DATA STORE (SUPABASE)
 // ══════════════════════════════════════════
+const SUPABASE_URL = 'https://bfbcwywfauicxnxjqouk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_qzDdMtEr3Ck4F0CWejuUTg_5AEC8zr7';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 
 const JENIS_PPKS = [
   {kode:"P01", nama:"Penyandang Disabilitas", icon:"♿"},
@@ -56,36 +60,51 @@ function formatDate(str) {
   return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
 }
 
-// Generate 120 sample records
+// Fetch Data from Supabase
 let DB = [];
 let idCounter = 1;
-function generateDB() {
-  DB = [];
-  idCounter = 1;
-  for(let i=0;i<120;i++) {
-    const jk = Math.random()>.45 ? 'Laki-laki':'Perempuan';
-    const nama = (jk==='Laki-laki'?randFrom(NAMA_LAKI):randFrom(NAMA_PEREMPUAN)) + ' ' + randFrom(NAMA_BELAKANG);
-    const jenisPpks = randFrom(JENIS_PPKS);
-    const statusOptions = ['Terverifikasi','Terverifikasi','Terverifikasi','Menunggu','Menunggu','Draft'];
-    const status = randFrom(statusOptions);
-    DB.push({
-      id: 'PPKS-PBD-'+String(idCounter++).padStart(4,'0'),
-      nama, nik: randNIK(), jk,
-      ttl: randDate(60), tglDaftar: randDate(2),
-      jenisPpks: jenisPpks.nama, jenisPpksKode: jenisPpks.kode,
-      jenisPpksIcon: jenisPpks.icon,
-      wilayah: randFrom(WILAYAH),
-      kecamatan: 'Kec. '+['Sorong Utara','Sorong Selatan','Sorong Timur','Aimas','Waigeo','Segun','Fef','Ayamaru','Sawiat','Teminabuan'][randInt(0,9)],
-      status,
-      kondisiKes: randFrom(['Sehat','Sakit Ringan','Sakit Kronis','Disabilitas']),
-      pendidikan: randFrom(['Tidak Sekolah','SD/Sederajat','SMP/Sederajat','SMA/Sederajat']),
-      kebutuhan: randFrom(['Bantuan Pangan','Bantuan Sandang','Layanan Kesehatan','Rehabilitasi Sosial','Pemberdayaan Ekonomi','Perlindungan Sosial']),
-      prioritas: randFrom(['Sangat Mendesak','Mendesak','Sedang','Rendah']),
-      bansos: randFrom(['PKH','BPNT/Sembako','KIS/BPJS PBI','Tidak Ada']),
-      petugas: 'Petugas ' + randFrom(['A','B','C','D','E']),
-      catatan: 'Data terdata melalui pendataan lapangan.',
-    });
+async function fetchDB() {
+  const { data, error } = await supabase
+    .from('ppks_data')
+    .select('*')
+    .order('created_at', { ascending: false });
+    
+  if(error) {
+    console.error("Supabase error:", error);
+    toast('Gagal mengambil data dari database', 'error');
+    return;
   }
+  
+  // Map database columns to local JS camelCase standard
+  DB = data.map(d => ({
+    _id: d.id, // the UUID in db
+    id: d.no_registrasi, // the PPKS-PBD-0000 string
+    nama: d.nama,
+    nik: d.nik,
+    jk: d.jk,
+    ttl: d.ttl,
+    tglDaftar: d.tgl_daftar,
+    jenisPpks: d.jenis_ppks,
+    jenisPpksKode: d.jenis_ppks_kode,
+    jenisPpksIcon: d.jenis_ppks_icon,
+    wilayah: d.wilayah,
+    kecamatan: d.kecamatan,
+    status: d.status,
+    kondisiKes: d.kondisi_kes,
+    pendidikan: d.pendidikan,
+    kebutuhan: d.kebutuhan,
+    prioritas: d.prioritas,
+    bansos: d.bansos,
+    petugas: d.petugas,
+    catatan: d.catatan
+  }));
+  
+  if(document.getElementById('page-data-ppks')?.classList.contains('active')) renderMainTable();
+  if(document.getElementById('page-verifikasi')?.classList.contains('active')) renderVerifTable();
+  renderDashboard();
+  if(document.getElementById('page-statistik')?.classList.contains('active')) renderStats();
+  if(document.getElementById('page-sebaran')?.classList.contains('active')) renderSebaran();
+  updateNavBadges();
 }
 
 // ══════════════════════════════════════════
@@ -380,12 +399,20 @@ function kv(label, value) {
   return `<div class="kv-row"><div class="kv-label">${label}</div><div class="kv-value">${value||'-'}</div></div>`;
 }
 
-function hapusData(id) {
+async function hapusData(id) {
   if(!confirm('Hapus data '+id+'?')) return;
-  DB = DB.filter(d=>d.id!==id);
-  renderDashboard();
-  renderMainTable();
-  toast('Data '+id+' berhasil dihapus','error');
+  const d = DB.find(x => x.id === id);
+  if(!d) return;
+
+  const { error } = await supabase.from('ppks_data').delete().eq('id', d._id);
+  if(error) {
+    toast('Gagal menghapus data', 'error');
+    console.error(error);
+    return;
+  }
+  
+  toast('Data '+id+' berhasil dihapus','success');
+  await fetchDB();
 }
 
 // ══════════════════════════════════════════
@@ -400,7 +427,7 @@ function switchTab(el, tabId) {
   });
 }
 
-function simpanData() {
+async function simpanData() {
   const nama = document.getElementById('f-nama').value.trim();
   const nik = document.getElementById('f-nik').value.trim();
   const jk = document.getElementById('f-jk').value;
@@ -414,25 +441,41 @@ function simpanData() {
     toast('NIK harus 16 digit angka','error'); return;
   }
 
-  const jenisData = JENIS_PPKS.find(j=>j.nama===jenisPpks)||{icon:'📋'};
-  const newId = 'PPKS-PBD-'+String(++idCounter).padStart(4,'0');
-  DB.unshift({
-    id: newId, nama, nik, jk, jenisPpks, jenisPpksIcon: jenisData.icon,
-    wilayah: kab, kecamatan: document.getElementById('f-kec').value||'-',
-    status: 'Draft', tglDaftar: new Date().toISOString().slice(0,10),
-    kondisiKes: document.getElementById('f-kondisi-kes')?.value||'-',
-    pendidikan: document.getElementById('f-pendidikan')?.value||'-',
-    kebutuhan: document.getElementById('f-kebutuhan')?.value||'-',
-    prioritas: document.getElementById('f-prioritas')?.value||'-',
-    bansos: document.getElementById('f-bansos')?.value||'-',
-    petugas: document.getElementById('f-petugas').value||'Admin',
-    catatan: document.getElementById('f-catatan')?.value||'-',
-  });
+  const jenisData = JENIS_PPKS.find(j=>j.nama===jenisPpks)||{icon:'📋', kode: '000'};
+  const newNoReg = 'PPKS-PBD-' + String(Math.floor(Math.random()*9000)+1000).padStart(4,'0');
+  
+  const newRecord = {
+    no_registrasi: newNoReg,
+    nama,
+    nik,
+    jk,
+    ttl: document.getElementById('f-ttl')?.value || null,
+    tgl_daftar: new Date().toISOString().slice(0,10),
+    jenis_ppks: jenisPpks,
+    jenis_ppks_kode: jenisData.kode,
+    jenis_ppks_icon: jenisData.icon,
+    wilayah: kab,
+    kecamatan: document.getElementById('f-kec').value || '-',
+    status: 'Draft',
+    kondisi_kes: document.getElementById('f-kondisi-kes')?.value || '-',
+    pendidikan: document.getElementById('f-pendidikan')?.value || '-',
+    kebutuhan: document.getElementById('f-kebutuhan')?.value || '-',
+    prioritas: document.getElementById('f-prioritas')?.value || '-',
+    bansos: document.getElementById('f-bansos')?.value || '-',
+    petugas: document.getElementById('f-petugas').value || 'Admin',
+    catatan: document.getElementById('f-catatan')?.value || '-'
+  };
+
+  const { error } = await supabase.from('ppks_data').insert([newRecord]);
+  if(error) {
+    toast('Gagal menyimpan data', 'error');
+    console.error(error);
+    return;
+  }
 
   resetForm();
-  renderDashboard();
-  updateNavBadges();
-  toast('Data '+newId+' berhasil disimpan!','success');
+  toast('Data '+newNoReg+' berhasil disimpan!','success');
+  await fetchDB();
   setTimeout(()=>showPage('data-ppks'),1000);
 }
 
@@ -495,26 +538,47 @@ function openVerifModal(id) {
   openModal('modalVerif');
 }
 
-function verifikasiData() {
+async function verifikasiData() {
   if(!currentVerifId) return;
   const d = DB.find(x=>x.id===currentVerifId);
-  if(d) d.status = 'Terverifikasi';
+  if(!d) return;
+
+  const { error } = await supabase.from('ppks_data').update({ status: 'Terverifikasi' }).eq('id', d._id);
+  if(error) {
+    toast('Gagal verifikasi data', 'error');
+    console.error(error);
+    return;
+  }
+
   closeModal('modalVerif');
-  renderVerifTable();
-  renderDashboard();
-  updateNavBadges();
   toast('Data '+currentVerifId+' berhasil diverifikasi!','success');
+  await fetchDB();
 }
 
-function quickVerif(id) {
+async function quickVerif(id) {
   const d = DB.find(x=>x.id===id);
-  if(d) { d.status='Terverifikasi'; renderVerifTable(); renderDashboard(); updateNavBadges(); toast('Data '+id+' terverifikasi!','success'); }
+  if(!d) return;
+  const { error } = await supabase.from('ppks_data').update({ status: 'Terverifikasi' }).eq('id', d._id);
+  if(error) { toast('Error', 'error'); return; }
+  toast('Data '+id+' terverifikasi!','success');
+  await fetchDB();
 }
 
-function tolakData() {
+async function tolakData() {
   if(!currentVerifId) return;
+  const d = DB.find(x=>x.id===currentVerifId);
+  if(!d) return;
+
+  const { error } = await supabase.from('ppks_data').update({ status: 'Ditolak' }).eq('id', d._id);
+  if(error) {
+    toast('Gagal menolak data', 'error');
+    console.error(error);
+    return;
+  }
+
   closeModal('modalVerif');
   toast('Data '+currentVerifId+' ditolak','error');
+  await fetchDB();
 }
 
 // ══════════════════════════════════════════
@@ -738,7 +802,7 @@ function exportData() {
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
-generateDB();
+fetchDB();
 renderDashboard();
 
 // populate form select on load
