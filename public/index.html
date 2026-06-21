@@ -77,7 +77,7 @@
 <!-- ════════════════════════════════════
      PAGE: DASHBOARD
 ════════════════════════════════════ -->
-<div class="page-view active" id="page-dashboard">
+<div class="page-view" id="page-dashboard">
 
   <div class="page-header">
     <div>
@@ -697,7 +697,7 @@
     <div class="modal-body" id="modalDetailBody"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modalDetail')">Tutup</button>
-      <button class="btn btn-primary" onclick="toast('Fitur edit diaktifkan','success'); closeModal("modalDetail")">✏️ Edit Data</button>
+      <button class="btn btn-primary" id="modalDetailEditBtn" onclick="closeModal('modalDetail')">✏️ Edit Data</button>
     </div>
   </div>
 </div>
@@ -724,6 +724,6 @@
 <!-- ═══════════════════════════════════════════════
      JAVASCRIPT — DATA ENGINE & INTERACTIVITY
 ═══════════════════════════════════════════════ -->
-<script src="js/app.js"></script>
+<script src="js/app.js" defer></script>
 </body>
 </html>
