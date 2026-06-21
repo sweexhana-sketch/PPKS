@@ -401,9 +401,9 @@ function renderDashboard() {
 
   // Activity timeline
   const acts = [
-    {icon:'💾',color:'var(--green)',title:'Data baru ditambahkan',desc:`${DB[0]?.nama || 'Data baru'} — ${DB[0]?.jenisPpks || ''}`,time:'5 menit lalu'},
-    {icon:'✅',color:'var(--teal)',title:'Verifikasi selesai',desc:`${verif} data PPKS telah diverifikasi`,time:'22 menit lalu'},
-    {icon:'✏️',color:'var(--blue-mid)',title:'Data diperbarui',desc:`${DB[1]?.nama || 'Data'} — ${DB[1]?.jenisPpks || ''}`,time:'1 jam lalu'},
+    {icon:'💾',color:'var(--green)',title:'Data baru ditambahkan',desc:(DB[0] ? DB[0].nama + ' — ' + DB[0].jenisPpks : 'Data baru'),time:'5 menit lalu'},
+    {icon:'✅',color:'var(--teal)',title:'Verifikasi selesai',desc:verif + ' data PPKS telah diverifikasi',time:'22 menit lalu'},
+    {icon:'✏️',color:'var(--blue-mid)',title:'Data diperbarui',desc:(DB[1] ? DB[1].nama + ' — ' + DB[1].jenisPpks : 'Data'),time:'1 jam lalu'},
     {icon:'📥',color:'var(--amber)',title:'Laporan diunduh',desc:'Laporan Bulanan Oktober 2024',time:'2 jam lalu'},
     {icon:'👤',color:'var(--purple)',title:'Login pengguna',desc:'Admin Bidang Rehabilitasi Sosial',time:'3 jam lalu'},
   ];
@@ -480,10 +480,14 @@ function renderMainTable() {
 }
 
 function filterTable() {
-  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
-  const fj = document.getElementById('filterJenis')?.value || '';
-  const fw = document.getElementById('filterWilayah')?.value || '';
-  const fs = document.getElementById('filterStatus')?.value || '';
+  const searchInput = document.getElementById('searchInput');
+  const q = (searchInput ? searchInput.value : '').toLowerCase();
+  const filterJenisEl = document.getElementById('filterJenis');
+  const fj = filterJenisEl ? filterJenisEl.value : '';
+  const filterWilayahEl = document.getElementById('filterWilayah');
+  const fw = filterWilayahEl ? filterWilayahEl.value : '';
+  const filterStatusEl = document.getElementById('filterStatus');
+  const fs = filterStatusEl ? filterStatusEl.value : '';
 
   filteredDB = DB.filter(d => {
     const matchQ = !q || (d.nama||'').toLowerCase().includes(q) || (d.nik||'').includes(q) || (d.id||'').toLowerCase().includes(q);

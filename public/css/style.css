@@ -578,7 +578,7 @@ td {
 
 /* ══ PAGE VIEWS ══ */
 .page-view { display: none; }
-.page-view.active { display: block; }
+.page-view.active { display: contents; }
 
 /* ══ ALERT ══ */
 .alert {
