@@ -3,7 +3,12 @@
 // ══════════════════════════════════════════
 const SUPABASE_URL = 'https://bfbcwywfauicxnxjqouk.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_qzDdMtEr3Ck4F0CWejuUTg_5AEC8zr7';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  console.error('Supabase init error:', e);
+}
 
 
 const JENIS_PPKS = [
@@ -64,6 +69,11 @@ function formatDate(str) {
 let DB = [];
 let idCounter = 1;
 async function fetchDB() {
+  if (!supabase) {
+    console.error("Supabase client is not initialized.");
+    toast('Gagal terhubung ke database', 'error');
+    return;
+  }
   const { data, error } = await supabase
     .from('ppks_data')
     .select('*')
