@@ -4,12 +4,12 @@
 const SUPABASE_URL = 'https://bfbcwywfauicxnxjqouk.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_qzDdMtEr3Ck4F0CWejuUTg_5AEC8zr7';
 
-let supabase = null;
+let supabaseClient = null;
 let USE_DEMO_DATA = false;
 
 try {
   if (window.supabase && window.supabase.createClient) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   } else {
     throw new Error('Supabase library not loaded');
   }
@@ -155,7 +155,7 @@ let filteredDB = [];
 // FETCH / INIT DATA
 // ══════════════════════════════════════════
 async function fetchDB() {
-  if (USE_DEMO_DATA || !supabase) {
+  if (USE_DEMO_DATA || !supabaseClient) {
     DB = generateDemoData(120);
     toast('Mode Demo aktif — menampilkan data simulasi', 'warning');
     renderDashboard();
@@ -621,7 +621,7 @@ async function hapusData(id) {
   const idx = DB.findIndex(x => x.id === id);
   if (idx === -1) { toast('Data tidak ditemukan', 'error'); return; }
 
-  if (USE_DEMO_DATA || !supabase) {
+  if (USE_DEMO_DATA || !supabaseClient) {
     DB.splice(idx, 1);
     toast(`Data ${id} berhasil dihapus (mode demo)`, 'success');
     renderMainTable();
@@ -631,7 +631,7 @@ async function hapusData(id) {
   }
 
   const d = DB[idx];
-  const { error } = await supabase.from('ppks_data').delete().eq('id', d._id);
+  const { error } = await supabaseClient.from('ppks_data').delete().eq('id', d._id);
   if (error) {
     toast('Gagal menghapus data: ' + error.message, 'error');
     return;
@@ -697,7 +697,7 @@ async function simpanData() {
     catatan: document.getElementById('f-catatan')?.value || '-',
   };
 
-  if (!USE_DEMO_DATA && supabase) {
+  if (!USE_DEMO_DATA && supabaseClient) {
     try {
       const dbRecord = {
         no_registrasi: newRecord.id,
@@ -720,7 +720,7 @@ async function simpanData() {
         petugas: newRecord.petugas,
         catatan: newRecord.catatan,
       };
-      const { error } = await supabase.from('ppks_data').insert([dbRecord]);
+      const { error } = await supabaseClient.from('ppks_data').insert([dbRecord]);
       if (error) throw error;
     } catch (err) {
       toast('Gagal menyimpan ke database: ' + err.message, 'error');
@@ -810,8 +810,8 @@ async function verifikasiData() {
   const d = DB.find(x => x.id === currentVerifId);
   if (!d) return;
 
-  if (!USE_DEMO_DATA && supabase) {
-    const { error } = await supabase.from('ppks_data').update({ status: 'Terverifikasi' }).eq('id', d._id);
+  if (!USE_DEMO_DATA && supabaseClient) {
+    const { error } = await supabaseClient.from('ppks_data').update({ status: 'Terverifikasi' }).eq('id', d._id);
     if (error) { toast('Gagal verifikasi: ' + error.message, 'error'); return; }
   }
 
@@ -827,8 +827,8 @@ async function quickVerif(id) {
   const d = DB.find(x => x.id === id);
   if (!d) return;
 
-  if (!USE_DEMO_DATA && supabase) {
-    const { error } = await supabase.from('ppks_data').update({ status: 'Terverifikasi' }).eq('id', d._id);
+  if (!USE_DEMO_DATA && supabaseClient) {
+    const { error } = await supabaseClient.from('ppks_data').update({ status: 'Terverifikasi' }).eq('id', d._id);
     if (error) { toast('Error: ' + error.message, 'error'); return; }
   }
 
@@ -844,8 +844,8 @@ async function tolakData() {
   const d = DB.find(x => x.id === currentVerifId);
   if (!d) return;
 
-  if (!USE_DEMO_DATA && supabase) {
-    const { error } = await supabase.from('ppks_data').update({ status: 'Ditolak' }).eq('id', d._id);
+  if (!USE_DEMO_DATA && supabaseClient) {
+    const { error } = await supabaseClient.from('ppks_data').update({ status: 'Ditolak' }).eq('id', d._id);
     if (error) { toast('Gagal menolak: ' + error.message, 'error'); return; }
   }
 
