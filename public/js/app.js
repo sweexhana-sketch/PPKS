@@ -1121,9 +1121,55 @@ document.addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════
+// LOGIN & SESSION
+// ══════════════════════════════════════════
+function checkLogin() {
+  const isLoggedIn = localStorage.getItem('sippks_logged_in');
+  if (isLoggedIn === 'true') {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('appWrapper').style.display = 'block';
+    return true;
+  } else {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('appWrapper').style.display = 'none';
+    return false;
+  }
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const user = document.getElementById('loginUsername').value;
+  const pass = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  
+  if (user && pass === 'admin123') {
+    localStorage.setItem('sippks_logged_in', 'true');
+    localStorage.setItem('sippks_user', user);
+    err.style.display = 'none';
+    checkLogin();
+    showToast(`Selamat datang, ${user}!`, 'success');
+  } else {
+    err.style.display = 'block';
+    err.textContent = 'Username atau password salah! (Gunakan: admin123)';
+  }
+}
+
+function logout() {
+  if (!confirm('Apakah Anda yakin ingin keluar dari sistem?')) return;
+  localStorage.removeItem('sippks_logged_in');
+  localStorage.removeItem('sippks_user');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  checkLogin();
+  showToast('Anda telah berhasil keluar.', 'info');
+}
+
+// ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // Check Login first
+  checkLogin();
   // Populate form selects
   const formSel = document.getElementById('f-jenis-ppks');
   if (formSel && formSel.options.length <= 1) {
