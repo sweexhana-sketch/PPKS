@@ -675,3 +675,89 @@ td {
   margin: 0 auto 20px auto;
   box-shadow: 0 8px 16px rgba(14, 165, 233, 0.25);
 }
+/* ----------------------------------------------
+   RESPONSIVE (MOBILE VIEW)
+---------------------------------------------- */
+.sidebar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  padding: 4px;
+}
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: block;
+    margin-right: 12px;
+  }
+  .topbar {
+    padding: 0 16px;
+    height: 60px;
+  }
+  .topbar-badge, .topbar-user { 
+    display: none; 
+  }
+  .topbar-logo {
+    width: 40px; height: 40px;
+  }
+  .topbar-brand-title { 
+    font-size: 14px; 
+  }
+  .topbar-brand-sub { 
+    font-size: 9px; 
+    white-space: normal;
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: -260px;
+    width: 260px;
+    height: calc(100vh - 60px);
+    z-index: 1000;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .sidebar.open {
+    left: 0;
+  }
+  
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - 60px);
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+  }
+  
+  .sidebar-backdrop.active {
+    display: block;
+  }
+  
+  /* Make main content more mobile friendly */
+  .main-content {
+    padding: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page-actions {
+    margin-top: 10px;
+    justify-content: stretch;
+  }
+  .page-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
